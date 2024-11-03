@@ -14,6 +14,7 @@ import FAQ from "./scenes/faq";
 import Geography from "./scenes/geography";
 import Calendar from "./scenes/calendar/calendar";
 import Login from "./scenes/login/index";
+import Profile from "./scenes/profile"; // Import Profile component
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { ColorModeContext, useMode } from "./theme";
 import { useAuth } from "./context/authContext";
@@ -62,6 +63,7 @@ function App() {
                   <Route path="/faq" element={<FAQ />} />
                   <Route path="/calendar" element={<Calendar />} />
                   <Route path="/geography" element={<Geography />} />
+                  <Route path="/profile" element={<Profile />} /> {/* Profile route */}
                 </>
               ) : (
                 <Route path="*" element={<Navigate to="/" />} />
