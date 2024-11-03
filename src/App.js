@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom"; // Import Navigate
+import { Routes, Route, Navigate } from "react-router-dom";
 import Topbar from "./scenes/global/Topbar";
 import Sidebar from "./scenes/global/Sidebar";
 import Dashboard from "./scenes/dashboard";
@@ -13,35 +13,43 @@ import Pie from "./scenes/pie";
 import FAQ from "./scenes/faq";
 import Geography from "./scenes/geography";
 import Calendar from "./scenes/calendar/calendar";
-import Login from "./scenes/login/login"; // Import Login component
+import Login from "./scenes/login/index";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { ColorModeContext, useMode } from "./theme";
+import { useAuth } from "./context/authContext";
 
 function App() {
   const [theme, colorMode] = useMode();
   const [isSidebar, setIsSidebar] = useState(true);
+  const { userLoggedIn, loading } = useAuth(); // Access loading and userLoggedIn from context
 
-  // Mock authentication state for testing
-  const isAuthenticated = false; // Update with actual authentication logic when available
+  console.log("App component rendered:");
+  console.log("User logged in:", userLoggedIn);
+  console.log("Loading state:", loading);
+
+  // Show loading screen or spinner while loading
+  if (loading) {
+    return <div>Loading...</div>; // Render a spinner or loading message here
+  }
 
   return (
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <div className="app">
-          {isAuthenticated && <Sidebar isSidebar={isSidebar} />}
+          {userLoggedIn && <Sidebar isSidebar={isSidebar} />}
           <main className="content">
-            {isAuthenticated && <Topbar setIsSidebar={setIsSidebar} />}
+            {userLoggedIn && <Topbar setIsSidebar={setIsSidebar} />}
             <Routes>
               {/* Default route */}
               <Route
                 path="/"
                 element={
-                  isAuthenticated ? <Navigate to="/dashboard" /> : <Login />
+                  userLoggedIn ? <Navigate to="/dashboard" /> : <Login />
                 }
               />
               {/* Protected routes */}
-              {isAuthenticated ? (
+              {userLoggedIn ? (
                 <>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/team" element={<Team />} />

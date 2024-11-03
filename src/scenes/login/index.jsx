@@ -10,16 +10,32 @@ import {
 import { tokens } from "../../theme";
 import { LockOutlined as LockIcon } from "@mui/icons-material";
 import Header from "../../components/Header";
+import { useAuth } from "../../context/authContext";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for redirection
 
 const Login = () => {
+  const { login } = useAuth(); // Access login function from AuthContext
+  const navigate = useNavigate(); // Initialize navigate for redirection
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
-  const handleLogin = () => {
-    // Handle login logic here
-    console.log("Logging in with", email, password);
+  // Login handler function
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setIsSigningIn(true);
+    try {
+      await login(email, password); // Attempt login using Firebase
+      navigate("/dashboard"); // Redirect to dashboard on success
+    } catch (err) {
+      setError("Failed to sign in. Please check your email and password.");
+      console.error(err);
+    }
+    setIsSigningIn(false);
   };
 
   return (
@@ -75,10 +91,16 @@ const Login = () => {
             style: { color: colors.grey[100] },
           }}
         />
+        {error && (
+          <Typography color="error" variant="body2" align="center" mb={2}>
+            {error}
+          </Typography>
+        )}
         <Button
           fullWidth
           variant="contained"
           onClick={handleLogin}
+          disabled={isSigningIn}
           sx={{
             backgroundColor: colors.greenAccent[500],
             color: colors.grey[100],
@@ -87,7 +109,7 @@ const Login = () => {
             mt: 2,
           }}
         >
-          Login
+          {isSigningIn ? "Logging in..." : "Login"}
         </Button>
         <Typography
           mt={2}
@@ -95,7 +117,10 @@ const Login = () => {
           color={colors.grey[100]}
           fontSize="0.875rem"
         >
-          Don’t have an account? <a href="/register" style={{ color: colors.blueAccent[500] }}>Sign Up</a>
+          Don’t have an account?{" "}
+          <a href="/register" style={{ color: colors.blueAccent[500] }}>
+            Sign Up
+          </a>
         </Typography>
       </Box>
     </Box>
