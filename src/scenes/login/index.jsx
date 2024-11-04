@@ -11,11 +11,13 @@ import { tokens } from "../../theme";
 import { LockOutlined as LockIcon } from "@mui/icons-material";
 import Header from "../../components/Header";
 import { useAuth } from "../../context/authContext";
-import { useNavigate } from "react-router-dom"; // Import useNavigate for redirection
+import { useNavigate } from "react-router-dom";
+import { db } from "../../firebase/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 const Login = () => {
-  const { login } = useAuth(); // Access login function from AuthContext
-  const navigate = useNavigate(); // Initialize navigate for redirection
+  const { login, logout } = useAuth();
+  const navigate = useNavigate();
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [email, setEmail] = useState("");
@@ -23,19 +25,19 @@ const Login = () => {
   const [error, setError] = useState("");
   const [isSigningIn, setIsSigningIn] = useState(false);
 
-  // Login handler function
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     setIsSigningIn(true);
+
     try {
-      await login(email, password); // Attempt login using Firebase
-      navigate("/dashboard"); // Redirect to dashboard on success
+      await login(email, password); // Attempt login and check for admin status in login function
+      navigate("/dashboard");
     } catch (err) {
-      setError("Failed to sign in. Please check your email and password.");
-      console.error(err);
+      setError("Access denied. You are not an admin."); // Display error for non-admin access
+    } finally {
+      setIsSigningIn(false);
     }
-    setIsSigningIn(false);
   };
 
   return (

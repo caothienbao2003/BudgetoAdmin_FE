@@ -1,36 +1,36 @@
 import React, { useState, useEffect } from "react";
 import { Box, Typography, Avatar, Button, useTheme } from "@mui/material";
 import { tokens } from "../../theme";
-import { useAuth } from "../../context/authContext"; // Assuming you have a context for authentication
+import { useAuth } from "../../context/authContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase/firebase";
 
 const Profile = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const { currentUser, logout } = useAuth(); // Assuming useAuth provides the current user and logout function
-  const [generalInfo, setGeneralInfo] = useState(null);
+  const { currentUser, logout } = useAuth();
+  const [adminInfo, setAdminInfo] = useState(null);
 
   useEffect(() => {
-    const fetchGeneralInfo = async () => {
+    const fetchAdminInfo = async () => {
       if (currentUser) {
         try {
-          // Reference to generalInfo document in the "info" subcollection of the user's document
-          const docRef = doc(db, "users", currentUser.uid, "info", "generalInfo");
+          // Reference to the document in the "admins" collection with the user's UID
+          const docRef = doc(db, "admins", currentUser.uid);
           const docSnap = await getDoc(docRef);
 
           if (docSnap.exists()) {
-            setGeneralInfo(docSnap.data()); // Set generalInfo state with document data
+            setAdminInfo(docSnap.data()); // Set adminInfo state with document data
           } else {
-            console.error("No generalInfo document found");
+            console.error("No admin document found");
           }
         } catch (error) {
-          console.error("Error fetching generalInfo:", error);
+          console.error("Error fetching admin info:", error);
         }
       }
     };
 
-    fetchGeneralInfo();
+    fetchAdminInfo();
   }, [currentUser]);
 
   const handleLogout = async () => {
@@ -38,7 +38,7 @@ const Profile = () => {
     // Optionally, redirect after logout if needed
   };
 
-  if (!generalInfo) return <Typography>Loading...</Typography>;
+  if (!adminInfo) return <Typography>Loading...</Typography>;
 
   return (
     <Box
@@ -60,41 +60,21 @@ const Profile = () => {
         textAlign="center"
       >
         <Avatar
-          alt={generalInfo.fullName || "User Avatar"}
-          src={generalInfo.imgURL || ""}
+          alt={adminInfo.fullName || "Admin Avatar"}
           sx={{
             width: 100,
             height: 100,
             margin: "0 auto",
             bgcolor: colors.blueAccent[600],
           }}
-        />
+        >
+          {adminInfo.fullName ? adminInfo.fullName.charAt(0) : "A"}
+        </Avatar>
         <Typography variant="h5" sx={{ marginTop: "15px", color: colors.grey[100] }}>
-          {generalInfo.fullName || "N/A"}
+          {adminInfo.fullName || "N/A"}
         </Typography>
         <Typography variant="body1" sx={{ color: colors.grey[100] }}>
-          {generalInfo.email || "N/A"}
-        </Typography>
-        <Typography variant="body2" sx={{ color: colors.grey[100], marginTop: "10px" }}>
-          Gender: {generalInfo.gender || "N/A"}
-        </Typography>
-        <Typography variant="body2" sx={{ color: colors.grey[100] }}>
-          Phone: {generalInfo.phone || "N/A"}
-        </Typography>
-        <Typography variant="body2" sx={{ color: colors.grey[100] }}>
-          Address: {generalInfo.address || "N/A"}
-        </Typography>
-        <Typography variant="body2" sx={{ color: colors.grey[100] }}>
-          Occupation: {generalInfo.occupation || "N/A"}
-        </Typography>
-        <Typography variant="body2" sx={{ color: colors.grey[100] }}>
-          Date of Birth: {generalInfo.dateOfBirth || "N/A"}
-        </Typography>
-        <Typography variant="body2" sx={{ color: colors.grey[100] }}>
-          Facebook: {generalInfo.facebookLink || "N/A"}
-        </Typography>
-        <Typography variant="body2" sx={{ color: colors.grey[100] }}>
-          Google: {generalInfo.googleLink || "N/A"}
+          {adminInfo.email || "N/A"}
         </Typography>
         <Button
           variant="contained"
