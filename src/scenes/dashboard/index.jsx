@@ -12,11 +12,65 @@ import GeographyChart from "../../components/GeographyChart";
 import BarChart from "../../components/BarChart";
 import StatBox from "../../components/StatBox";
 import ProgressCircle from "../../components/ProgressCircle";
+import React, { useState, useEffect } from "react"; // Import useState and useEffect from React
+import { db, auth } from "../../firebase/firebase"; // Import db and auth from Firebase
+import { onAuthStateChanged } from "firebase/auth";
+
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  Timestamp,
+  doc,
+  getDoc,
+} from "firebase/firestore"; // Firebase imports
+
 
 const Dashboard = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const [activeUsersCount, setActiveUsersCount] = useState(0); // Add this state
 
+  useEffect(() => {
+    const fetchActiveUsersCount = async () => {
+      try {
+        // Calculate the start of the day
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const usersRef = collection(db, "users");
+        const activeUsersSnapshot = await getDocs(usersRef);
+
+        let count = 0;
+
+        for (const userDoc of activeUsersSnapshot.docs) {
+          const userId = userDoc.id;
+          const adminDocRef = doc(db, "admins", userId);
+          const adminDoc = await getDoc(adminDocRef);
+
+          // Fetch user's last sign-in time from auth
+          const user = auth.currentUser;
+          if (user) {
+            const lastSignIn = new Date(user.metadata.lastSignInTime);
+
+            // Check if the user is not an admin and signed in today
+            if (!adminDoc.exists() && lastSignIn >= startOfDay) {
+              count += 1;
+            }
+          }
+        }
+
+        setActiveUsersCount(count);
+      } catch (error) {
+        console.error("Error fetching active users:", error);
+      }
+    };
+
+    fetchActiveUsersCount();
+  }, []);
+
+  
   return (
     <Box m="20px">
       {/* HEADER */}
@@ -74,8 +128,8 @@ const Dashboard = () => {
           justifyContent="center"
         >
           <StatBox
-            title="100"
-            subtitle="Today's active user"
+            title={activeUsersCount} // Replace 100 with activeUsersCount
+            subtitle="Today's active users"
             progress="0.1"
             increase="-11%"
             icon={
@@ -149,8 +203,7 @@ const Dashboard = () => {
                 variant="h3"
                 fontWeight="bold"
                 color={colors.greenAccent[500]}
-              >
-              </Typography>
+              ></Typography>
             </Box>
             <Box>
               <IconButton>
