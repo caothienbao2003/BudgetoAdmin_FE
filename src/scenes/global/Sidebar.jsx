@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { ProSidebar, Menu, MenuItem } from "react-pro-sidebar";
 import { Box, IconButton, Typography, useTheme } from "@mui/material";
 import { Link } from "react-router-dom";
@@ -16,6 +16,8 @@ import PieChartOutlineOutlinedIcon from "@mui/icons-material/PieChartOutlineOutl
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
+import { useAuth } from "../../context/authContext";
+import { AdminRepository } from "../../repositories/AdminRepository";
 
 // Reusable Menu Item Component
 const Item = ({ title, to, icon, selected, setSelected }) => {
@@ -42,6 +44,29 @@ const Sidebar = () => {
   const colors = tokens(theme.palette.mode);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selected, setSelected] = useState("Dashboard");
+
+  const [adminInfo, setAdminInfo] = useState(null);
+  const { currentUser } = useAuth();
+
+  useEffect(() => {
+    const fetchAdminInfo = async () => {
+      if (currentUser) {
+        try {
+          const adminData = await AdminRepository.getAdminById(currentUser.uid);
+          if (adminData) {
+            setAdminInfo(adminData);
+          } else {
+            console.error("Admin document not found");
+          }
+        } catch (error) {
+          console.error("Error fetching admin info:", error);
+        }
+      }
+    };
+
+    fetchAdminInfo();
+  }, [currentUser]);
+
 
   return (
     <Box display="flex">
@@ -91,7 +116,7 @@ const Sidebar = () => {
                   ml="15px"
                 >
                   <Typography variant="h3" color={colors.grey[100]}>
-                    ADMINIS
+                    ADMIN
                   </Typography>
                   <IconButton onClick={() => setIsCollapsed(!isCollapsed)}>
                     <MenuOutlinedIcon />
@@ -119,10 +144,10 @@ const Sidebar = () => {
                     fontWeight="bold"
                     sx={{ m: "10px 0 0 0" }}
                   >
-                    Ed Roh
+                    {adminInfo ? adminInfo.fullName : ""}
                   </Typography>
                   <Typography variant="h5" color={colors.greenAccent[500]}>
-                    VP Fancy Admin
+                    {/* VP Fancy Admin */}
                   </Typography>
                 </Box>
               </Box>

@@ -2,12 +2,11 @@ import React, { useState, useEffect } from "react";
 import { Box, Typography, useTheme } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
-import { db } from "../../firebase/firebase"; // Import Firestore setup
-import { collection, doc, getDocs, getDoc } from "firebase/firestore";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import LockOpenOutlinedIcon from "@mui/icons-material/LockOpenOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import Header from "../../components/Header";
+import userGeneralInfoApi from "../../api/userGeneralInfoAPI";
 
 const Team = () => {
   const theme = useTheme();
@@ -17,24 +16,17 @@ const Team = () => {
   useEffect(() => {
     const fetchTeamData = async () => {
       try {
-        const adminCollection = collection(db, "users");
-        const adminSnapshot = await getDocs(adminCollection);
-
-        const teamDataPromises = adminSnapshot.docs.map(async (userDoc) => {
-          const generalInfoRef = doc(db, "users", userDoc.id, "info", "generalInfo");
-          const generalInfoSnapshot = await getDoc(generalInfoRef);
-          if (generalInfoSnapshot.exists()) {
-            return {
-              id: userDoc.id,
-              ...generalInfoSnapshot.data(), // Fetch all fields including address
-            };
-          } else {
-            return null; // Skip if no generalInfo document exists
-          }
-        });
-
-        const teamData = (await Promise.all(teamDataPromises)).filter(Boolean);
-        setTeamData(teamData);
+        // Use the userGeneralInfoApi to fetch data from the .NET API
+        const response = await userGeneralInfoApi.getAllUserGeneralInfo();
+        setTeamData(response.data.map((item) => ({
+          id: item.userId, // Replace `userId` with the correct field from API response
+          fullName: item.fullName,
+          email: item.email,
+          phone: item.phone,
+          address: item.address,
+          occupation: item.occupation,
+          gender: item.gender,
+        })));
       } catch (error) {
         console.error("Error fetching team data:", error);
       }

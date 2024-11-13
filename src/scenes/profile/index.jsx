@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Box, Typography, Avatar, Button, useTheme } from "@mui/material";
 import { tokens } from "../../theme";
 import { useAuth } from "../../context/authContext";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../firebase/firebase";
+import { AdminRepository } from "../../repositories/AdminRepository";
 
 const Profile = () => {
   const theme = useTheme();
@@ -15,14 +14,12 @@ const Profile = () => {
     const fetchAdminInfo = async () => {
       if (currentUser) {
         try {
-          // Reference to the document in the "admins" collection with the user's UID
-          const docRef = doc(db, "admins", currentUser.uid);
-          const docSnap = await getDoc(docRef);
-
-          if (docSnap.exists()) {
-            setAdminInfo(docSnap.data()); // Set adminInfo state with document data
+          // Use AdminRepository to fetch admin info directly
+          const adminData = await AdminRepository.getAdminById(currentUser.uid);
+          if (adminData) {
+            setAdminInfo(adminData);
           } else {
-            console.error("No admin document found");
+            console.error("Admin document not found");
           }
         } catch (error) {
           console.error("Error fetching admin info:", error);

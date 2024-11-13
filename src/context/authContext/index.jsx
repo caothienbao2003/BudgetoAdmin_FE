@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, createContext } from "react";
+import React, { useContext, useEffect, useState, createContext, useCallback } from "react";
 import { auth, db } from "../../firebase/firebase";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -36,22 +36,41 @@ export function AuthProvider({ children }) {
     return unsubscribe;
   }, []);
 
-  const login = async (email, password) => {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const uid = userCredential.user.uid;
-    
-    // Check if user is in "admins" collection
-    const adminRef = doc(db, "admins", uid);
-    const adminDoc = await getDoc(adminRef);
+  const login = useCallback(async (email, password) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const uid = userCredential.user.uid;
 
-    if (!adminDoc.exists()) {
-      await signOut(auth); // Immediately sign out non-admin users
-      throw new Error("Access denied: Not an admin");
+      const adminRef = doc(db, "admins", uid);
+      const adminDoc = await getDoc(adminRef);
+
+      if (!adminDoc.exists()) {
+        await signOut(auth);
+        throw new Error("Access denied: Not an admin");
+      }
+      setCurrentUser(userCredential.user);
+      setUserLoggedIn(true);
+      return userCredential.user;
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
     }
-    return userCredential.user;
-  };
+  }, []);
 
-  const logout = () => signOut(auth);
+  const logout = useCallback(() => signOut(auth), []);
+
+  // New function to get the logged-in admin user
+  const getAdminLoggedIn = useCallback(async () => {
+    const user = auth.currentUser;
+    if (user) {
+      const adminRef = doc(db, "admins", user.uid);
+      const adminDoc = await getDoc(adminRef);
+      if (adminDoc.exists()) {
+        return user; // User is an admin
+      }
+    }
+    return null; // No admin user is logged in
+  }, []);
 
   const value = {
     currentUser,
@@ -59,6 +78,7 @@ export function AuthProvider({ children }) {
     loading,
     login,
     logout,
+    getAdminLoggedIn, // Expose the new function in the context
   };
 
   return (

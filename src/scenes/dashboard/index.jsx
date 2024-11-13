@@ -12,9 +12,13 @@ import GeographyChart from "../../components/GeographyChart";
 import BarChart from "../../components/BarChart";
 import StatBox from "../../components/StatBox";
 import ProgressCircle from "../../components/ProgressCircle";
-import React, { useState, useEffect } from "react"; // Import useState and useEffect from React
-import { db, auth } from "../../firebase/firebase"; // Import db and auth from Firebase
+import React, { useState, useEffect } from "react";
+import { db, auth } from "../../firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { DailySummaryRepository } from "../../repositories/DailySummaryRepository";
+import { AdminRepository } from "../../repositories/AdminRepository";
+import { useAuth } from "../../context/authContext";
+
 
 import {
   collection,
@@ -24,58 +28,93 @@ import {
   Timestamp,
   doc,
   getDoc,
+  onSnapshot,
 } from "firebase/firestore"; // Firebase imports
-
+import {
+  MonetizationOn,
+  PeopleAlt,
+  PersonPin,
+  VerifiedUser,
+  VolunteerActivismRounded,
+} from "@mui/icons-material";
 
 const Dashboard = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const [activeUsersCount, setActiveUsersCount] = useState(0); // Add this state
+  const [activeUsersCount, setActiveUsersCount] = useState(0);
+  const [newUsersCount, setNewUsersCount] = useState(0); // New state for sign-ups
+  const [lineChartData, setLineChartData] = useState([]);
+
+  const [adminInfo, setAdminInfo] = useState(null);
+  const { currentUser } = useAuth();
 
   useEffect(() => {
-    const fetchActiveUsersCount = async () => {
-      try {
-        // Calculate the start of the day
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
-
-        const usersRef = collection(db, "users");
-        const activeUsersSnapshot = await getDocs(usersRef);
-
-        let count = 0;
-
-        for (const userDoc of activeUsersSnapshot.docs) {
-          const userId = userDoc.id;
-          const adminDocRef = doc(db, "admins", userId);
-          const adminDoc = await getDoc(adminDocRef);
-
-          // Fetch user's last sign-in time from auth
-          const user = auth.currentUser;
-          if (user) {
-            const lastSignIn = new Date(user.metadata.lastSignInTime);
-
-            // Check if the user is not an admin and signed in today
-            if (!adminDoc.exists() && lastSignIn >= startOfDay) {
-              count += 1;
-            }
+    const fetchAdminInfo = async () => {
+      if (currentUser) {
+        try {
+          const adminData = await AdminRepository.getAdminById(currentUser.uid);
+          if (adminData) {
+            setAdminInfo(adminData);
+          } else {
+            console.error("Admin document not found");
           }
+        } catch (error) {
+          console.error("Error fetching admin info:", error);
         }
-
-        setActiveUsersCount(count);
-      } catch (error) {
-        console.error("Error fetching active users:", error);
       }
     };
 
-    fetchActiveUsersCount();
+    fetchAdminInfo();
+  }, [currentUser]);
+
+  useEffect(() => {
+    const unsubscribeToday = DailySummaryRepository.getTodaySummary(
+      (todaySummary) => {
+        setActiveUsersCount(todaySummary.loginCount);
+        setNewUsersCount(todaySummary.signUpCount);
+      }
+    );
+
+    return () => unsubscribeToday();
   }, []);
 
-  
+  useEffect(() => {
+    const unsubscribe = DailySummaryRepository.onAllDailySummariesSnapshot(
+      (summaries) => {
+        const activeUsersData = summaries.map((summary) => ({
+          x: summary.date,
+          y: summary.loginCount,
+        }));
+
+        const offlineUsersData = summaries.map((summary) => ({
+          x: summary.date,
+          y: summary.offlineCount - summary.loginCount,
+        }));
+
+        setLineChartData([
+          {
+            id: "Active Users",
+            color: "hsl(217, 70%, 50%)",
+            data: activeUsersData,
+          },
+          {
+            id: "Offline Users",
+            color: "hsl(0, 70%, 50%)",
+            data: offlineUsersData,
+          },
+        ]);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
   return (
     <Box m="20px">
       {/* HEADER */}
       <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Header title="Hello admin" subtitle="Welcome to your dashboard" />
+        <Header title={`Hello ${adminInfo ? adminInfo.fullName : ""}`}
+         subtitle="Welcome to your dashboard" />
 
         <Box>
           <Button
@@ -102,7 +141,7 @@ const Dashboard = () => {
       >
         {/* ROW 1 */}
         <Box
-          gridColumn="span 3"
+          gridColumn="span 4"
           backgroundColor={colors.primary[400]}
           display="flex"
           alignItems="center"
@@ -114,40 +153,40 @@ const Dashboard = () => {
             progress="0.75"
             increase="+14%"
             icon={
-              <EmailIcon
+              <MonetizationOn
                 sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
               />
             }
           />
         </Box>
         <Box
-          gridColumn="span 3"
+          gridColumn="span 4"
           backgroundColor={colors.primary[400]}
           display="flex"
           alignItems="center"
           justifyContent="center"
         >
           <StatBox
-            title={activeUsersCount} // Replace 100 with activeUsersCount
+            title={activeUsersCount}
             subtitle="Today's active users"
             progress="0.1"
             increase="-11%"
             icon={
-              <PointOfSaleIcon
+              <PeopleAlt
                 sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
               />
             }
           />
         </Box>
         <Box
-          gridColumn="span 3"
+          gridColumn="span 4"
           backgroundColor={colors.primary[400]}
           display="flex"
           alignItems="center"
           justifyContent="center"
         >
           <StatBox
-            title="50"
+            title={newUsersCount}
             subtitle="Today New Users"
             progress="0.30"
             increase="+36%"
@@ -158,7 +197,7 @@ const Dashboard = () => {
             }
           />
         </Box>
-        <Box
+        {/* <Box
           gridColumn="span 3"
           backgroundColor={colors.primary[400]}
           display="flex"
@@ -176,7 +215,7 @@ const Dashboard = () => {
               />
             }
           />
-        </Box>
+        </Box> */}
 
         {/* ROW 2 */}
         <Box
@@ -214,7 +253,7 @@ const Dashboard = () => {
             </Box>
           </Box>
           <Box height="250px" m="-20px 0 0 0">
-            <LineChart isDashboard={true} />
+            <LineChart data={lineChartData} isDashboard={true} />
           </Box>
         </Box>
         {/* Recent Transaction */}
