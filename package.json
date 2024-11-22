@@ -32,17 +32,15 @@
     "react-dom": "^18.3.1",
     "react-pro-sidebar": "^0.7.1",
     "react-router-dom": "^6.26.2",
-    "react-scripts": "5.0.1",
     "stream-http": "^3.2.0",
     "url": "^0.11.4",
     "web-vitals": "^2.1.4",
     "yup": "^1.4.0"
   },
   "scripts": {
-    "start": "set HTTPS=true&&react-app-rewired start",
-    "build": "react-app-rewired build",
-    "test": "react-app-rewired test",
-    "eject": "react-scripts eject"
+    "start": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
   },
   "eslintConfig": {
     "extends": [
@@ -64,7 +62,8 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@vitejs/plugin-react": "^4.3.3",
     "react-app-rewired": "^2.2.1",
-    "vite": "^5.4.8"
+    "vite": "^5.4.11"
   }
 }
