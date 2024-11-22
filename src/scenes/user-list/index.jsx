@@ -18,6 +18,7 @@ const Team = () => {
       try {
         // Use the userGeneralInfoApi to fetch data from the .NET API
         const response = await userGeneralInfoApi.getAllUserGeneralInfo();
+        console.log(response.data);
         setTeamData(response.data.map((item) => ({
           id: item.userId, // Replace `userId` with the correct field from API response
           fullName: item.fullName,
