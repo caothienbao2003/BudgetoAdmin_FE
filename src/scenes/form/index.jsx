@@ -1,24 +1,59 @@
-import { Box, Button, TextField } from "@mui/material";
+import {
+  Box,
+  Button,
+  TextField,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+} from "@mui/material";
 import { Formik } from "formik";
 import * as yup from "yup";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import Header from "../../components/Header";
+import { AdminRepository } from "../../repositories/AdminRepository";
+import { auth } from "../../firebase/firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
-const Form = () => {
+const AdminForm = () => {
   const isNonMobile = useMediaQuery("(min-width:600px)");
 
-  const handleFormSubmit = (values) => {
-    console.log(values);
+  const handleFormSubmit = async (values, { resetForm }) => {
+    try {
+      // Create a new user in Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        values.email,
+        values.password
+      );
+      const user = userCredential.user;
+
+      // Use the UID from Firebase Auth as the adminId
+      await AdminRepository.addAdmin({
+        adminId: user.uid,
+        fullName: values.fullName,
+        email: values.email,
+        phoneNumber: values.phoneNumber,
+        gender: values.gender,
+        createdDate: new Date().toISOString(),
+      });
+
+      console.log("Admin added successfully");
+      resetForm();
+    } catch (error) {
+      console.error("Error adding admin:", error);
+      // Handle errors (e.g., display a notification to the user)
+    }
   };
 
   return (
     <Box m="20px">
-      <Header title="CREATE USER" subtitle="Create a New User Profile" />
+      <Header title="CREATE ADMIN" subtitle="Create a New Admin Profile" />
 
       <Formik
         onSubmit={handleFormSubmit}
         initialValues={initialValues}
-        validationSchema={checkoutSchema}
+        validationSchema={adminSchema}
       >
         {({
           values,
@@ -37,36 +72,39 @@ const Form = () => {
                 "& > div": { gridColumn: isNonMobile ? undefined : "span 4" },
               }}
             >
+              {/* Password Field */}
               <TextField
                 fullWidth
                 variant="filled"
-                type="text"
-                label="First Name"
+                type="password"
+                label="Password"
                 onBlur={handleBlur}
                 onChange={handleChange}
-                value={values.firstName}
-                name="firstName"
-                error={!!touched.firstName && !!errors.firstName}
-                helperText={touched.firstName && errors.firstName}
-                sx={{ gridColumn: "span 2" }}
+                value={values.password}
+                name="password"
+                error={!!touched.password && !!errors.password}
+                helperText={touched.password && errors.password}
+                sx={{ gridColumn: "span 4" }}
               />
+
               <TextField
                 fullWidth
                 variant="filled"
                 type="text"
-                label="Last Name"
+                label="Full Name"
                 onBlur={handleBlur}
                 onChange={handleChange}
-                value={values.lastName}
-                name="lastName"
-                error={!!touched.lastName && !!errors.lastName}
-                helperText={touched.lastName && errors.lastName}
-                sx={{ gridColumn: "span 2" }}
+                value={values.fullName}
+                name="fullName"
+                error={!!touched.fullName && !!errors.fullName}
+                helperText={touched.fullName && errors.fullName}
+                sx={{ gridColumn: "span 4" }}
               />
+
               <TextField
                 fullWidth
                 variant="filled"
-                type="text"
+                type="email"
                 label="Email"
                 onBlur={handleBlur}
                 onChange={handleChange}
@@ -76,49 +114,51 @@ const Form = () => {
                 helperText={touched.email && errors.email}
                 sx={{ gridColumn: "span 4" }}
               />
+
               <TextField
                 fullWidth
                 variant="filled"
                 type="text"
-                label="Contact Number"
+                label="Phone Number"
                 onBlur={handleBlur}
                 onChange={handleChange}
-                value={values.contact}
-                name="contact"
-                error={!!touched.contact && !!errors.contact}
-                helperText={touched.contact && errors.contact}
+                value={values.phoneNumber}
+                name="phoneNumber"
+                error={!!touched.phoneNumber && !!errors.phoneNumber}
+                helperText={touched.phoneNumber && errors.phoneNumber}
                 sx={{ gridColumn: "span 4" }}
               />
-              <TextField
+
+              <FormControl
                 fullWidth
                 variant="filled"
-                type="text"
-                label="Address 1"
-                onBlur={handleBlur}
-                onChange={handleChange}
-                value={values.address1}
-                name="address1"
-                error={!!touched.address1 && !!errors.address1}
-                helperText={touched.address1 && errors.address1}
                 sx={{ gridColumn: "span 4" }}
-              />
-              <TextField
-                fullWidth
-                variant="filled"
-                type="text"
-                label="Address 2"
-                onBlur={handleBlur}
-                onChange={handleChange}
-                value={values.address2}
-                name="address2"
-                error={!!touched.address2 && !!errors.address2}
-                helperText={touched.address2 && errors.address2}
-                sx={{ gridColumn: "span 4" }}
-              />
+              >
+                <InputLabel>Gender</InputLabel>
+                <Select
+                  name="gender"
+                  value={values.gender}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={!!touched.gender && !!errors.gender}
+                >
+                  <MenuItem value="">
+                    <em>None</em>
+                  </MenuItem>
+                  <MenuItem value="Male">Male</MenuItem>
+                  <MenuItem value="Female">Female</MenuItem>
+                  <MenuItem value="Other">Other</MenuItem>
+                </Select>
+                {touched.gender && errors.gender && (
+                  <div style={{ color: "red", marginTop: "5px" }}>
+                    {errors.gender}
+                  </div>
+                )}
+              </FormControl>
             </Box>
             <Box display="flex" justifyContent="end" mt="20px">
               <Button type="submit" color="secondary" variant="contained">
-                Create New User
+                Create New Admin
               </Button>
             </Box>
           </form>
@@ -131,24 +171,26 @@ const Form = () => {
 const phoneRegExp =
   /^((\+[1-9]{1,4}[ -]?)|(\([0-9]{2,3}\)[ -]?)|([0-9]{2,4})[ -]?)*?[0-9]{3,4}[ -]?[0-9]{3,4}$/;
 
-const checkoutSchema = yup.object().shape({
-  firstName: yup.string().required("required"),
-  lastName: yup.string().required("required"),
-  email: yup.string().email("invalid email").required("required"),
-  contact: yup
+const adminSchema = yup.object().shape({
+  fullName: yup.string().required("Required"),
+  email: yup.string().email("Invalid email").required("Required"),
+  password: yup
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .required("Required"),
+  phoneNumber: yup
     .string()
     .matches(phoneRegExp, "Phone number is not valid")
-    .required("required"),
-  address1: yup.string().required("required"),
-  address2: yup.string().required("required"),
+    .required("Required"),
+  gender: yup.string().required("Required"),
 });
+
 const initialValues = {
-  firstName: "",
-  lastName: "",
+  fullName: "",
   email: "",
-  contact: "",
-  address1: "",
-  address2: "",
+  password: "",
+  phoneNumber: "",
+  gender: "",
 };
 
-export default Form;
+export default AdminForm;

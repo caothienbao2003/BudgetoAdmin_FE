@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, useTheme } from "@mui/material";
+import { Box, Button } from "@mui/material"; // Ensure Button is imported here
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
-import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
-import LockOpenOutlinedIcon from "@mui/icons-material/LockOpenOutlined";
-import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import Header from "../../components/Header";
-import userGeneralInfoApi from "../../api/userGeneralInfoAPI";
+import { UserGeneralInfoRepository } from "../../repositories/UserGeneralInfoRepository";
+import { UserRepository } from "../../repositories/UserRepository";
+import { useTheme } from "@mui/material/styles";
+
 
 const Team = () => {
   const theme = useTheme();
@@ -16,18 +16,32 @@ const Team = () => {
   useEffect(() => {
     const fetchTeamData = async () => {
       try {
-        // Use the userGeneralInfoApi to fetch data from the .NET API
-        const response = await userGeneralInfoApi.getAllUserGeneralInfo();
-        console.log(response.data);
-        setTeamData(response.data.map((item) => ({
-          id: item.userId, // Replace `userId` with the correct field from API response
-          fullName: item.fullName,
-          email: item.email,
-          phone: item.phone,
-          address: item.address,
-          occupation: item.occupation,
-          gender: item.gender,
-        })));
+        // Fetch user general info
+        const userGeneralInfo = await UserGeneralInfoRepository.getAllUsers();
+
+        // Fetch status for each user from the "users" collection
+        const enrichedUsers = await Promise.all(
+          userGeneralInfo.map(async (user) => {
+            const userId = user.id;
+            let status = "INACTIVE"; // Default value for status
+
+            try {
+              const userDoc = await UserRepository.getUserById(userId);
+              if (userDoc && userDoc.status) {
+                status = userDoc.status; // Fetch the status field
+              }
+            } catch (error) {
+              console.error(`Error fetching status for user ID ${userId}:`, error);
+            }
+
+            return {
+              ...user,
+              status, // Add the status field to the user object
+            };
+          })
+        );
+
+        setTeamData(enrichedUsers);
       } catch (error) {
         console.error("Error fetching team data:", error);
       }
@@ -36,13 +50,28 @@ const Team = () => {
     fetchTeamData();
   }, []);
 
+  const handleToggleStatus = async (userId, currentStatus) => {
+    try {
+      const newStatus = currentStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+      await UserRepository.updateUserStatus(userId, newStatus); // Update the status in Firestore
+
+      // Update the status locally for the UI
+      setTeamData((prevData) =>
+        prevData.map((user) =>
+          user.id === userId ? { ...user, status: newStatus } : user
+        )
+      );
+    } catch (error) {
+      console.error(`Failed to update status for user ID ${userId}:`, error);
+    }
+  };
+
   const columns = [
     { field: "id", headerName: "User ID", flex: 1 },
     {
       field: "fullName",
       headerName: "Full Name",
       flex: 1,
-      cellClassName: "name-column--cell",
     },
     {
       field: "email",
@@ -55,7 +84,7 @@ const Team = () => {
       flex: 1,
     },
     {
-      field: "address", // Include address field
+      field: "address",
       headerName: "Address",
       flex: 1,
     },
@@ -69,37 +98,30 @@ const Team = () => {
       headerName: "Gender",
       flex: 1,
     },
-    // {
-    //   field: "accessLevel",
-    //   headerName: "Access Level",
-    //   flex: 1,
-    //   renderCell: ({ row: { accessLevel } }) => {
-    //     return (
-    //       <Box
-    //         width="60%"
-    //         m="0 auto"
-    //         p="5px"
-    //         display="flex"
-    //         justifyContent="center"
-    //         backgroundColor={
-    //           accessLevel === "admin"
-    //             ? colors.greenAccent[600]
-    //             : accessLevel === "manager"
-    //             ? colors.greenAccent[700]
-    //             : colors.greenAccent[700]
-    //         }
-    //         borderRadius="4px"
-    //       >
-    //         {accessLevel === "admin" && <AdminPanelSettingsOutlinedIcon />}
-    //         {accessLevel === "manager" && <SecurityOutlinedIcon />}
-    //         {accessLevel === "user" && <LockOpenOutlinedIcon />}
-    //         <Typography color={colors.grey[100]} sx={{ ml: "5px" }}>
-    //           {accessLevel}
-    //         </Typography>
-    //       </Box>
-    //     );
-    //   },
-    // },
+    {
+      field: "status",
+      headerName: "Status",
+      flex: 1,
+      renderCell: ({ row }) => {
+        const isActive = row.status === "ACTIVE";
+        const buttonColor = isActive
+          ? colors.greenAccent[600]
+          : colors.redAccent[600];
+
+        return (
+          <Button
+            variant="contained"
+            onClick={() => handleToggleStatus(row.id, row.status)}
+            style={{
+              backgroundColor: buttonColor,
+              color: "white",
+            }}
+          >
+            {row.status}
+          </Button>
+        );
+      },
+    },
   ];
 
   return (
@@ -114,9 +136,6 @@ const Team = () => {
           },
           "& .MuiDataGrid-cell": {
             borderBottom: "none",
-          },
-          "& .name-column--cell": {
-            color: colors.greenAccent[300],
           },
           "& .MuiDataGrid-columnHeaders": {
             backgroundColor: colors.blueAccent[700],

@@ -1,49 +1,48 @@
-import { Box, Button, IconButton, Typography, useTheme } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Button,
+  IconButton,
+  Typography,
+  useTheme,
+  Select,
+  MenuItem,
+  Tooltip,
+} from "@mui/material";
 import { tokens } from "../../theme";
 import { mockTransactions } from "../../data/mockData";
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
-import EmailIcon from "@mui/icons-material/Email";
-import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
+import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import TrafficIcon from "@mui/icons-material/Traffic";
+import ArrowBackIosIcon from "@mui/icons-material/ArrowBackIos";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import Header from "../../components/Header";
 import LineChart from "../../components/LineChart";
 import GeographyChart from "../../components/GeographyChart";
 import BarChart from "../../components/BarChart";
 import StatBox from "../../components/StatBox";
 import ProgressCircle from "../../components/ProgressCircle";
-import React, { useState, useEffect } from "react";
-import { db, auth } from "../../firebase/firebase";
-import { onAuthStateChanged } from "firebase/auth";
 import { DailySummaryRepository } from "../../repositories/DailySummaryRepository";
 import { AdminRepository } from "../../repositories/AdminRepository";
 import { useAuth } from "../../context/authContext";
 
-
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  Timestamp,
-  doc,
-  getDoc,
-  onSnapshot,
-} from "firebase/firestore"; // Firebase imports
-import {
-  MonetizationOn,
-  PeopleAlt,
-  PersonPin,
-  VerifiedUser,
-  VolunteerActivismRounded,
-} from "@mui/icons-material";
-
 const Dashboard = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
   const [activeUsersCount, setActiveUsersCount] = useState(0);
-  const [newUsersCount, setNewUsersCount] = useState(0); // New state for sign-ups
+  const [newUsersCount, setNewUsersCount] = useState(0);
   const [lineChartData, setLineChartData] = useState([]);
+  const [filter, setFilter] = useState("week");
+
+  // State variables for current period
+  const [currentWeekStart, setCurrentWeekStart] = useState(
+    getStartOfWeek(new Date())
+  );
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth()); // 0 - 11
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
   const [adminInfo, setAdminInfo] = useState(null);
   const { currentUser } = useAuth();
@@ -81,42 +80,267 @@ const Dashboard = () => {
   useEffect(() => {
     const unsubscribe = DailySummaryRepository.onAllDailySummariesSnapshot(
       (summaries) => {
-        const activeUsersData = summaries.map((summary) => ({
-          x: summary.date,
-          y: summary.loginCount,
-        }));
-
-        const offlineUsersData = summaries.map((summary) => ({
-          x: summary.date,
-          y: summary.offlineCount - summary.loginCount,
-        }));
+        // Filter summaries based on the selected filter and current period
+        const filteredSummaries = filterDailySummaries(summaries);
 
         setLineChartData([
           {
             id: "Active Users",
             color: "hsl(217, 70%, 50%)",
-            data: activeUsersData,
+            data: filteredSummaries.map((summary) => ({
+              x: summary.label,
+              y: summary.loginCount,
+            })),
           },
           {
             id: "Offline Users",
             color: "hsl(0, 70%, 50%)",
-            data: offlineUsersData,
+            data: filteredSummaries.map((summary) => ({
+              x: summary.label,
+              y: summary.offlineCount - summary.loginCount,
+            })),
           },
         ]);
       }
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [filter, currentWeekStart, currentMonth, currentYear]);
+
+  // Function to filter and process daily summaries based on the filter and current period
+  const filterDailySummaries = (summaries) => {
+    let dateLabels = [];
+    let dateToLabelMap = {};
+    let filteredSummaries = [];
+
+    if (filter === "week") {
+      const weekDates = getDatesForWeek(currentWeekStart);
+      dateLabels = weekDates.map((date) => ({
+        dateString: date.toISOString().split("T")[0],
+        label: `${date.toLocaleDateString("en-US", { weekday: "short" })} (${date.getDate()})`,
+      }));
+    } else if (filter === "month") {
+      const monthDates = getDatesForMonth(currentYear, currentMonth);
+      dateLabels = monthDates.map((date) => ({
+        dateString: date.toISOString().split("T")[0],
+        label: date.getDate().toString(),
+      }));
+    } else if (filter === "year") {
+      dateLabels = Array.from({ length: 12 }, (_, i) => ({
+        month: i,
+        label: new Date(currentYear, i).toLocaleString("en-US", { month: "short" }),
+      }));
+    }
+
+    // Create a map for quick lookup
+    dateToLabelMap = dateLabels.reduce((acc, item) => {
+      if (filter === "year") {
+        acc[item.month] = item.label;
+      } else {
+        acc[item.dateString] = item.label;
+      }
+      return acc;
+    }, {});
+
+    if (filter === "year") {
+      // Sum data per month
+      const monthlyData = {};
+      for (let i = 0; i < 12; i++) {
+        monthlyData[i] = { loginCount: 0, offlineCount: 0 };
+      }
+
+      summaries.forEach((summary) => {
+        const date = new Date(summary.date);
+        if (date.getFullYear() === currentYear) {
+          const month = date.getMonth();
+          monthlyData[month].loginCount += summary.loginCount;
+          monthlyData[month].offlineCount += summary.offlineCount;
+        }
+      });
+
+      // Create filtered summaries with labels
+      filteredSummaries = Object.keys(monthlyData).map((month) => ({
+        label: dateToLabelMap[month],
+        loginCount: monthlyData[month].loginCount,
+        offlineCount: monthlyData[month].offlineCount,
+      }));
+    } else {
+      // Create a map of summaries for quick lookup
+      const summaryMap = summaries.reduce((acc, summary) => {
+        acc[summary.date] = summary;
+        return acc;
+      }, {});
+
+      filteredSummaries = dateLabels.map((item) => {
+        const summary = summaryMap[item.dateString];
+        return {
+          label: item.label,
+          loginCount: summary ? summary.loginCount : 0,
+          offlineCount: summary ? summary.offlineCount : 0,
+        };
+      });
+    }
+
+    return filteredSummaries;
+  };
+
+  // Helper functions
+  function getStartOfWeek(date) {
+    const day = date.getDay(); // 0 (Sun) to 6 (Sat)
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+    return new Date(date.setDate(diff));
+  }
+
+  function getDatesForWeek(startDate) {
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      dates.push(date);
+    }
+    return dates;
+  }
+
+  function getDatesForMonth(year, month) {
+    const dates = [];
+    const date = new Date(year, month, 1);
+    while (date.getMonth() === month) {
+      dates.push(new Date(date));
+      date.setDate(date.getDate() + 1);
+    }
+    return dates;
+  }
+
+  // Handlers for arrow buttons
+  const handlePreviousPeriod = () => {
+    if (filter === "week") {
+      setCurrentWeekStart((prevDate) => {
+        const newDate = new Date(prevDate);
+        newDate.setDate(prevDate.getDate() - 7);
+        return newDate;
+      });
+    } else if (filter === "month") {
+      setCurrentMonth((prevMonth) => {
+        const newMonth = prevMonth - 1;
+        if (newMonth < 0) {
+          setCurrentYear((prevYear) => prevYear - 1);
+          return 11; // December
+        }
+        return newMonth;
+      });
+    } else if (filter === "year") {
+      setCurrentYear((prevYear) => prevYear - 1);
+    }
+  };
+
+  const handleNextPeriod = () => {
+    if (filter === "week") {
+      setCurrentWeekStart((prevDate) => {
+        const newDate = new Date(prevDate);
+        newDate.setDate(prevDate.getDate() + 7);
+        if (newDate > new Date()) {
+          return prevDate;
+        }
+        return newDate;
+      });
+    } else if (filter === "month") {
+      setCurrentMonth((prevMonth) => {
+        const today = new Date();
+        const newMonth = prevMonth + 1;
+        const newYear = currentYear + (newMonth > 11 ? 1 : 0);
+        const adjustedMonth = newMonth % 12;
+        const newDate = new Date(newYear, adjustedMonth);
+        if (newDate > today) {
+          return prevMonth;
+        }
+        if (newMonth > 11) {
+          setCurrentYear((prevYear) => prevYear + 1);
+        }
+        return adjustedMonth;
+      });
+    } else if (filter === "year") {
+      const today = new Date();
+      if (currentYear + 1 > today.getFullYear()) {
+        return;
+      }
+      setCurrentYear((prevYear) => prevYear + 1);
+    }
+  };
+
+  // Go to current period
+  const handleCurrentPeriod = () => {
+    if (filter === "week") {
+      setCurrentWeekStart(getStartOfWeek(new Date()));
+    } else if (filter === "month") {
+      const today = new Date();
+      setCurrentMonth(today.getMonth());
+      setCurrentYear(today.getFullYear());
+    } else if (filter === "year") {
+      setCurrentYear(new Date().getFullYear());
+    }
+  };
+
+  // Disable next button if current period
+  const isNextDisabled = () => {
+    const today = new Date();
+    if (filter === "week") {
+      const nextWeekStart = new Date(currentWeekStart);
+      nextWeekStart.setDate(currentWeekStart.getDate() + 7);
+      return nextWeekStart > today;
+    } else if (filter === "month") {
+      const nextMonth = currentMonth + 1;
+      const nextYear = currentYear + (nextMonth > 11 ? 1 : 0);
+      const adjustedMonth = nextMonth % 12;
+      const nextDate = new Date(nextYear, adjustedMonth);
+      return nextDate > today;
+    } else if (filter === "year") {
+      return currentYear + 1 > today.getFullYear();
+    }
+    return false;
+  };
+
+  // Display current period
+  const getCurrentPeriodLabel = () => {
+    if (filter === "week") {
+      const endDate = new Date(currentWeekStart);
+      endDate.setDate(currentWeekStart.getDate() + 6);
+      return `${currentWeekStart.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
+    } else if (filter === "month") {
+      return new Date(currentYear, currentMonth).toLocaleString("en-US", {
+        month: "long",
+        year: "numeric",
+      });
+    } else if (filter === "year") {
+      return currentYear.toString();
+    }
+  };
+
+  // Handle filter change
+  const handleFilterChange = (newFilter) => {
+    setFilter(newFilter);
+    // Reset period states when filter changes
+    if (newFilter === "week") {
+      setCurrentWeekStart(getStartOfWeek(new Date()));
+    } else if (newFilter === "month") {
+      const today = new Date();
+      setCurrentMonth(today.getMonth());
+      setCurrentYear(today.getFullYear());
+    } else if (newFilter === "year") {
+      setCurrentYear(new Date().getFullYear());
+    }
+  };
 
   return (
     <Box m="20px">
       {/* HEADER */}
       <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Header title={`Hello ${adminInfo ? adminInfo.fullName : ""}`}
-         subtitle="Welcome to your dashboard" />
+        <Header
+          title={`Hello ${adminInfo ? adminInfo.fullName : ""}`}
+          subtitle="Welcome to your dashboard"
+        />
 
-        <Box>
+        <Box display="flex" alignItems="center">
+          {/* Existing Download Reports Button */}
           <Button
             sx={{
               backgroundColor: colors.blueAccent[700],
@@ -153,7 +377,7 @@ const Dashboard = () => {
             progress="0.75"
             increase="+14%"
             icon={
-              <MonetizationOn
+              <MonetizationOnIcon
                 sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
               />
             }
@@ -172,7 +396,7 @@ const Dashboard = () => {
             progress="0.1"
             increase="-11%"
             icon={
-              <PeopleAlt
+              <PeopleAltIcon
                 sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
               />
             }
@@ -187,7 +411,7 @@ const Dashboard = () => {
         >
           <StatBox
             title={newUsersCount}
-            subtitle="Today New Users"
+            subtitle="Today's New Users"
             progress="0.30"
             increase="+36%"
             icon={
@@ -197,25 +421,6 @@ const Dashboard = () => {
             }
           />
         </Box>
-        {/* <Box
-          gridColumn="span 3"
-          backgroundColor={colors.primary[400]}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <StatBox
-            title="1,325,134"
-            subtitle="Traffic Received"
-            progress="0.80"
-            increase="+43%"
-            icon={
-              <TrafficIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
-              />
-            }
-          />
-        </Box> */}
 
         {/* ROW 2 */}
         <Box
@@ -226,37 +431,71 @@ const Dashboard = () => {
           <Box
             mt="25px"
             p="0 30px"
-            display="flex "
+            display="flex"
             justifyContent="space-between"
             alignItems="center"
           >
+            {/* Title */}
             <Box>
-              <Typography
-                variant="h5"
-                fontWeight="600"
-                color={colors.grey[100]}
-              >
+              <Typography variant="h5" fontWeight="600" color={colors.grey[100]}>
                 Daily Active Users
               </Typography>
-              <Typography
-                variant="h3"
-                fontWeight="bold"
-                color={colors.greenAccent[500]}
-              ></Typography>
+              <Typography variant="subtitle1" color={colors.grey[100]}>
+                {getCurrentPeriodLabel()}
+              </Typography>
             </Box>
-            <Box>
-              <IconButton>
-                <DownloadOutlinedIcon
-                  sx={{ fontSize: "26px", color: colors.greenAccent[500] }}
-                />
+
+            {/* Controls: Filter Dropdown and Arrow Buttons */}
+            <Box display="flex" alignItems="center" gap="10px">
+              {/* Filter Dropdown */}
+              <Select
+                value={filter}
+                onChange={(e) => handleFilterChange(e.target.value)}
+                sx={{
+                  backgroundColor: colors.primary[400],
+                  color: colors.grey[100],
+                  minWidth: "120px",
+                  height: "40px",
+                  border: `1px solid ${colors.grey[300]}`,
+                  borderRadius: "4px",
+                }}
+              >
+                <MenuItem value="week">Week</MenuItem>
+                <MenuItem value="month">Month</MenuItem>
+                <MenuItem value="year">Year</MenuItem>
+              </Select>
+
+              {/* Arrow Buttons */}
+              <IconButton onClick={handlePreviousPeriod}>
+                <ArrowBackIosIcon sx={{ color: colors.grey[100] }} />
+              </IconButton>
+
+              {/* Current Period Button */}
+              <Tooltip title="Go to Current Period">
+                <IconButton onClick={handleCurrentPeriod}>
+                  <RadioButtonUncheckedIcon sx={{ color: colors.grey[100] }} />
+                </IconButton>
+              </Tooltip>
+
+              <IconButton
+                onClick={handleNextPeriod}
+                disabled={isNextDisabled()}
+                sx={{
+                  color: isNextDisabled() ? colors.grey[500] : colors.grey[100],
+                }}
+              >
+                <ArrowForwardIosIcon />
               </IconButton>
             </Box>
           </Box>
+
+          {/* Line Chart */}
           <Box height="250px" m="-20px 0 0 0">
             <LineChart data={lineChartData} isDashboard={true} />
           </Box>
         </Box>
-        {/* Recent Transaction */}
+
+        {/* Recent Transactions */}
         <Box
           gridColumn="span 4"
           gridRow="span 2"
@@ -268,7 +507,7 @@ const Dashboard = () => {
             justifyContent="space-between"
             alignItems="center"
             borderBottom={`4px solid ${colors.primary[500]}`}
-            colors={colors.grey[100]}
+            color={colors.grey[100]}
             p="15px"
           >
             <Typography color={colors.grey[100]} variant="h5" fontWeight="600">
