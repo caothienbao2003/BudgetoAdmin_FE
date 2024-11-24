@@ -1,28 +1,25 @@
 import { Box, Typography, useTheme } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
-import { mockDataInvoices } from "../../data/mockData";
+import { mockTransactions } from "../../data/mockData"; // Import the mockTransactions
 import Header from "../../components/Header";
 
 const Invoices = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
+  // Define columns to match mockTransactions
   const columns = [
-    { field: "id", headerName: "ID" },
+    { field: "txId", headerName: "Transaction ID", flex: 1 },
     {
-      field: "name",
-      headerName: "Name",
+      field: "user",
+      headerName: "User",
       flex: 1,
       cellClassName: "name-column--cell",
     },
     {
-      field: "phone",
-      headerName: "Phone Number",
-      flex: 1,
-    },
-    {
-      field: "email",
-      headerName: "Email",
+      field: "date",
+      headerName: "Date",
       flex: 1,
     },
     {
@@ -31,20 +28,15 @@ const Invoices = () => {
       flex: 1,
       renderCell: (params) => (
         <Typography color={colors.greenAccent[500]}>
-          ${params.row.cost}
+          {params.row.cost} VND
         </Typography>
       ),
-    },
-    {
-      field: "date",
-      headerName: "Date",
-      flex: 1,
     },
   ];
 
   return (
     <Box m="20px">
-      <Header title="INVOICES" subtitle="List of Invoice Balances" />
+      <Header title="TRANSACTIONS" subtitle="List of Transactions" />
       <Box
         m="40px 0 0 0"
         height="75vh"
@@ -74,7 +66,12 @@ const Invoices = () => {
           },
         }}
       >
-        <DataGrid checkboxSelection rows={mockDataInvoices} columns={columns} />
+        <DataGrid
+          checkboxSelection
+          rows={mockTransactions} // Use mockTransactions as the data source
+          columns={columns}
+          getRowId={(row) => row.txId} // Use txId as the unique row identifier
+        />
       </Box>
     </Box>
   );

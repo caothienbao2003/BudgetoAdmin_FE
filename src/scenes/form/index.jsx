@@ -72,6 +72,19 @@ const AdminForm = () => {
                 "& > div": { gridColumn: isNonMobile ? undefined : "span 4" },
               }}
             >
+              <TextField
+                fullWidth
+                variant="filled"
+                type="email"
+                label="Email"
+                onBlur={handleBlur}
+                onChange={handleChange}
+                value={values.email}
+                name="email"
+                error={!!touched.email && !!errors.email}
+                helperText={touched.email && errors.email}
+                sx={{ gridColumn: "span 4" }}
+              />
               {/* Password Field */}
               <TextField
                 fullWidth
@@ -98,20 +111,6 @@ const AdminForm = () => {
                 name="fullName"
                 error={!!touched.fullName && !!errors.fullName}
                 helperText={touched.fullName && errors.fullName}
-                sx={{ gridColumn: "span 4" }}
-              />
-
-              <TextField
-                fullWidth
-                variant="filled"
-                type="email"
-                label="Email"
-                onBlur={handleBlur}
-                onChange={handleChange}
-                value={values.email}
-                name="email"
-                error={!!touched.email && !!errors.email}
-                helperText={touched.email && errors.email}
                 sx={{ gridColumn: "span 4" }}
               />
 

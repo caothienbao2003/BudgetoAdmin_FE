@@ -268,53 +268,185 @@ export const mockDataInvoices = [
 
 export const mockTransactions = [
   {
-    txId: "01e4dsa",
-    user: "johndoe",
-    date: "2021-09-01",
-    cost: "43.95",
+    txId: "661ITC124327AU3A",
+    user: "TRIEU THANH DAT",
+    date: "22/11/2024",
+    cost: "20.000",
   },
   {
-    txId: "0315dsaa",
-    user: "jackdower",
-    date: "2022-04-01",
-    cost: "133.45",
+    txId: "661ITC124327AS43",
+    user: "QUOC ANH",
+    date: "22/11/2024",
+    cost: "100,000",
   },
   {
-    txId: "01e4dsa",
-    user: "aberdohnny",
-    date: "2021-09-01",
-    cost: "43.95",
+    txId: "661ITC124327APWX",
+    user: "DUONG TRAN DANG KHOA",
+    date: "22/11/2024",
+    cost: "50,000",
   },
   {
-    txId: "51034szv",
-    user: "goodmanave",
-    date: "2022-11-05",
-    cost: "200.95",
+    txId: "661V60224327A7LY",
+    user: "HO PHUOC DAI",
+    date: "22/11/2024",
+    cost: "50,000",
   },
   {
-    txId: "0a123sb",
-    user: "stevebower",
-    date: "2022-11-02",
-    cost: "13.55",
+    "txId": "661ITC124327APH3",
+    "user": "PHAN THI LE UYEN NHI",
+    "date": "22/11/2024",
+    "cost": "20,000"
   },
   {
-    txId: "01e4dsa",
-    user: "aberdohnny",
-    date: "2021-09-01",
-    cost: "43.95",
+    "txId": "666V501243271609",
+    "user": "Chuyen tien QR",
+    "date": "22/11/2024",
+    "cost": "50,000"
   },
   {
-    txId: "120s51a",
-    user: "wootzifer",
-    date: "2019-04-15",
-    cost: "24.20",
+    "txId": "661ITC124327AP55",
+    "user": "CAO THIEN BAO",
+    "date": "22/11/2024",
+    "cost": "30,000"
   },
   {
-    txId: "0315dsaa",
-    user: "jackdower",
-    date: "2022-04-01",
-    cost: "133.45",
+    "txId": "661V60224327A0LD",
+    "user": "LAM MINH DANG",
+    "date": "22/11/2024",
+    "cost": "20,000"
   },
+  {
+    "txId": "661ITC124327A9WW",
+    "user": "DAO HUONG THAO",
+    "date": "22/11/2024",
+    "cost": "50,000"
+  },
+  {
+    "txId": "661V602243276428",
+    "user": "LE QUY DIEM",
+    "date": "22/11/2024",
+    "cost": "50,000"
+  },
+  {
+    "txId": "661ITC124327A2MU",
+    "user": "HUYNH TRUC PHUONG",
+    "date": "22/11/2024",
+    "cost": "50,000"
+  },
+  {
+    "txId": "661V602243275816",
+    "user": "CAO KHA SUONG",
+    "date": "22/11/2024",
+    "cost": "30,000"
+  },
+  {
+    "txId": "661ITC124326AGJR",
+    "user": "CAO DUY BAO",
+    "date": "21/11/2024",
+    "cost": "100,000"
+  },
+  {
+    "txId": "661V60224325A9G9",
+    "user": "LUU TUAN CUONG",
+    "date": "20/11/2024",
+    "cost": "50,000"
+  },
+  {
+    "txId": "661ITC124325ARJR",
+    "user": "NGUYEN QUANG CHIEN",
+    "date": "20/11/2024",
+    "cost": "50,000"
+  },
+  {
+    "txId": "661V60224325A68C",
+    "user": "DUONG",
+    "date": "20/11/2024",
+    "cost": "20,000"
+  },
+  {
+    "txId": "661ITC124325AG40",
+    "user": "NGUYEN HUYNH GIA THINH",
+    "date": "20/11/2024",
+    "cost": "59,000"
+  },
+  {
+    "txId": "661ITC124325ADKJ",
+    "user": "NGUYEN HOAI VU",
+    "date": "20/11/2024",
+    "cost": "30,000"
+  },
+  {
+    "txId": "661ITC124325ADG2",
+    "user": "TRAN MINH QUANG",
+    "date": "20/11/2024",
+    "cost": "40,000"
+  },
+  {
+    "txId": "661V60224325A1RM",
+    "user": "NGUYEN THI DIEP",
+    "date": "20/11/2024",
+    "cost": "10,000"
+  },
+  {
+    "txId": "661V60224325A1I7",
+    "user": "CAO QUANG DUNG",
+    "date": "20/11/2024",
+    "cost": "50,000"
+  },
+  {
+    "txId": "661ITC124325ACBG",
+    "user": "HO THANH KHOI",
+    "date": "20/11/2024",
+    "cost": "20,000"
+  },
+  {
+    "txId": "661V60224325A1FE",
+    "user": "LE THI QUYEN",
+    "date": "20/11/2024",
+    "cost": "50,000"
+  },
+  {
+    "txId": "661V60224325A1EF",
+    "user": "NGUYEN LE THUY VY",
+    "date": "20/11/2024",
+    "cost": "20,000"
+  },
+  {
+    "txId": "661V60224325A1DX",
+    "user": "VO THI THAO VAN",
+    "date": "20/11/2024",
+    "cost": "33,000"
+  },
+  {
+    "txId": "661ITC124325ABFB",
+    "user": "Ung ho budgeto",
+    "date": "20/11/2024",
+    "cost": "10,000"
+  },
+  {
+    "txId": "918V501243250030",
+    "user": "sd app",
+    "date": "20/11/2024",
+    "cost": "200,000"
+  },
+  {
+    "txId": "661V60224325A035",
+    "user": "DO TRUNG KIEN",
+    "date": "20/11/2024",
+    "cost": "20,000"
+  },
+  {
+    "txId": "661ITC124325A89J",
+    "user": "Ung ho Budgeto",
+    "date": "20/11/2024",
+    "cost": "50,000"
+  },
+  {
+    "txId": "661DDBBVND00002",
+    "user": "TRA LAI TIEN GUI TK",
+    "date": "25/08/2024",
+    "cost": "1"
+  }
 ];
 
 export const mockBarData = [

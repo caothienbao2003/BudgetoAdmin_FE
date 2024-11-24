@@ -1,33 +1,51 @@
-import { Box } from "@mui/material";
-import { DataGrid, GridToolbar } from "@mui/x-data-grid";
+import React, { useState, useEffect } from "react";
+import { Box, Button } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
-import { mockDataContacts } from "../../data/mockData";
 import Header from "../../components/Header";
-import { useTheme } from "@mui/material";
+import { AdminRepository } from "../../repositories/AdminRepository";
+import { useTheme } from "@mui/material/styles";
 
-const Contacts = () => {
+const AdminList = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const [adminData, setAdminData] = useState([]);
+
+  useEffect(() => {
+    const fetchAdminData = async () => {
+      try {
+        // Fetch admin data
+        const admins = await AdminRepository.getAllAdmins();
+        setAdminData(admins);
+      } catch (error) {
+        console.error("Error fetching admin data:", error);
+      }
+    };
+
+    fetchAdminData();
+  }, []);
+
+  const handleToggleStatus = async (adminId, currentStatus) => {
+    try {
+      const newStatus = currentStatus === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+      await AdminRepository.updateAdminStatus(adminId, newStatus); // Update status in Firestore
+
+      // Update status locally for the UI
+      setAdminData((prevData) =>
+        prevData.map((admin) =>
+          admin.id === adminId ? { ...admin, status: newStatus } : admin
+        )
+      );
+    } catch (error) {
+      console.error(`Failed to update status for admin ID ${adminId}:`, error);
+    }
+  };
 
   const columns = [
-    { field: "id", headerName: "ID", flex: 0.5 },
-    { field: "registrarId", headerName: "Registrar ID" },
+    { field: "id", headerName: "Admin ID", flex: 1 },
     {
-      field: "name",
-      headerName: "Name",
-      flex: 1,
-      cellClassName: "name-column--cell",
-    },
-    {
-      field: "age",
-      headerName: "Age",
-      type: "number",
-      headerAlign: "left",
-      align: "left",
-    },
-    {
-      field: "phone",
-      headerName: "Phone Number",
+      field: "fullName",
+      headerName: "Full Name",
       flex: 1,
     },
     {
@@ -36,28 +54,49 @@ const Contacts = () => {
       flex: 1,
     },
     {
-      field: "address",
-      headerName: "Address",
+      field: "phoneNumber",
+      headerName: "Phone Number",
       flex: 1,
     },
     {
-      field: "city",
-      headerName: "City",
+      field: "gender",
+      headerName: "Gender",
       flex: 1,
     },
     {
-      field: "zipCode",
-      headerName: "Zip Code",
+      field: "createdDate",
+      headerName: "Created Date",
       flex: 1,
+    },
+    {
+      field: "status",
+      headerName: "Status",
+      flex: 1,
+      renderCell: ({ row }) => {
+        const isActive = row.status === "ACTIVE";
+        const buttonColor = isActive
+          ? colors.greenAccent[600]
+          : colors.redAccent[600];
+
+        return (
+          <Button
+            variant="contained"
+            onClick={() => handleToggleStatus(row.id, row.status)}
+            style={{
+              backgroundColor: buttonColor,
+              color: "white",
+            }}
+          >
+            {row.status}
+          </Button>
+        );
+      },
     },
   ];
 
   return (
     <Box m="20px">
-      <Header
-        title="CONTACTS"
-        subtitle="List of Contacts for Future Reference"
-      />
+      <Header title="Admins" subtitle="Managing the Admins" />
       <Box
         m="40px 0 0 0"
         height="75vh"
@@ -67,9 +106,6 @@ const Contacts = () => {
           },
           "& .MuiDataGrid-cell": {
             borderBottom: "none",
-          },
-          "& .name-column--cell": {
-            color: colors.greenAccent[300],
           },
           "& .MuiDataGrid-columnHeaders": {
             backgroundColor: colors.blueAccent[700],
@@ -85,19 +121,12 @@ const Contacts = () => {
           "& .MuiCheckbox-root": {
             color: `${colors.greenAccent[200]} !important`,
           },
-          "& .MuiDataGrid-toolbarContainer .MuiButton-text": {
-            color: `${colors.grey[100]} !important`,
-          },
         }}
       >
-        <DataGrid
-          rows={mockDataContacts}
-          columns={columns}
-          components={{ Toolbar: GridToolbar }}
-        />
+        <DataGrid checkboxSelection rows={adminData} columns={columns} />
       </Box>
     </Box>
   );
 };
 
-export default Contacts;
+export default AdminList;

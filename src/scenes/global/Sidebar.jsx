@@ -116,7 +116,7 @@ const Sidebar = () => {
                   ml="15px"
                 >
                   <Typography variant="h3" color={colors.grey[100]}>
-                    ADMIN
+                    BUDGETO
                   </Typography>
                   <IconButton onClick={() => setIsCollapsed(!isCollapsed)}>
                     <MenuOutlinedIcon />
@@ -128,7 +128,7 @@ const Sidebar = () => {
             {/* USER PROFILE */}
             {!isCollapsed && (
               <Box mb="25px">
-                <Box display="flex" justifyContent="center" alignItems="center">
+                {/* <Box display="flex" justifyContent="center" alignItems="center">
                   <img
                     alt="profile-user"
                     width="100px"
@@ -136,7 +136,7 @@ const Sidebar = () => {
                     src={`../../assets/user.png`}
                     style={{ cursor: "pointer", borderRadius: "50%" }}
                   />
-                </Box>
+                </Box> */}
                 <Box textAlign="center">
                   <Typography
                     variant="h2"
@@ -178,7 +178,7 @@ const Sidebar = () => {
                 setSelected={setSelected}
               />
               <Item
-                title="Contacts Information"
+                title="Manage Admins"
                 to="/contacts"
                 icon={<ContactsOutlinedIcon />}
                 selected={selected}
@@ -200,7 +200,7 @@ const Sidebar = () => {
                 Pages
               </Typography>
               <Item
-                title="Profile Form"
+                title="Create admin"
                 to="/form"
                 icon={<PersonOutlinedIcon />}
                 selected={selected}
@@ -213,15 +213,15 @@ const Sidebar = () => {
                 selected={selected}
                 setSelected={setSelected}
               />
-              <Item
+              {/* <Item
                 title="FAQ Page"
                 to="/faq"
                 icon={<HelpOutlineOutlinedIcon />}
                 selected={selected}
                 setSelected={setSelected}
-              />
+              /> */}
 
-              <Typography
+              {/* <Typography
                 variant="h6"
                 color={colors.grey[300]}
                 sx={{ m: "15px 0 5px 20px" }}
@@ -255,7 +255,7 @@ const Sidebar = () => {
                 icon={<MapOutlinedIcon />}
                 selected={selected}
                 setSelected={setSelected}
-              />
+              /> */}
             </Box>
           </Menu>
         </ProSidebar>

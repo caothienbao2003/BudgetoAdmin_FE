@@ -330,6 +330,24 @@ const Dashboard = () => {
     }
   };
 
+  const [activeUsersIncrease, setActiveUsersIncrease] = useState("0%");
+  // State for New Users
+  const [newUsersIncrease, setNewUsersIncrease] = useState("0%");
+
+  useEffect(() => {
+    // Fetch data for Active Users
+    DailySummaryRepository.getTodaySummary((summary) => setActiveUsersCount(summary.loginCount));
+    DailySummaryRepository.getActiveUserIncrementPercentage((percentage) =>
+      setActiveUsersIncrease(`${percentage > 0 ? "+" : ""}${percentage.toFixed(1)}%`)
+    );
+  
+    // Fetch data for New Users
+    DailySummaryRepository.getTodaySummary((summary) => setNewUsersCount(summary.signUpCount));
+    DailySummaryRepository.getNewUserIncrementPercentage((percentage) =>
+      setNewUsersIncrease(`${percentage > 0 ? "+" : ""}${percentage.toFixed(1)}%`)
+    );
+  }, []);
+
   return (
     <Box m="20px">
       {/* HEADER */}
@@ -359,7 +377,7 @@ const Dashboard = () => {
       {/* GRID & CHARTS */}
       <Box
         display="grid"
-        gridTemplateColumns="repeat(12, 1fr)"
+        gridTemplateColumns="repeat(16, 1fr)"
         gridAutoRows="140px"
         gap="20px"
       >
@@ -372,10 +390,29 @@ const Dashboard = () => {
           justifyContent="center"
         >
           <StatBox
-            title="$50,430.56"
+            title="1,332,001 VND"
+            subtitle="Total revenue"
+            progress="0"
+            increase="+0%"
+            icon={
+              <MonetizationOnIcon
+                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
+              />
+            }
+          />
+        </Box>
+        <Box
+          gridColumn="span 4"
+          backgroundColor={colors.primary[400]}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <StatBox
+            title="0 VND"
             subtitle="Today's revenue"
-            progress="0.75"
-            increase="+14%"
+            progress="0"
+            increase="+0%"
             icon={
               <MonetizationOnIcon
                 sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
@@ -393,8 +430,21 @@ const Dashboard = () => {
           <StatBox
             title={activeUsersCount}
             subtitle="Today's active users"
-            progress="0.1"
-            increase="-11%"
+            progress={(() => {
+              if (!activeUsersIncrease) return 0; // Default to 0 if no value
+          
+              const parsedIncrease = parseFloat(activeUsersIncrease); // Convert string to number
+              if (isNaN(parsedIncrease)) return 0; // Fallback if parsing fails
+          
+              if (parsedIncrease < 0) {
+                // Invert negative value on a 100% scale
+                return Math.min(Math.max(1 - Math.abs(parsedIncrease) / 100, 0), 1);
+              }
+          
+              // Use as-is for positive values
+              return Math.min(Math.max(parsedIncrease / 100, 0), 1);
+            })()}
+            increase={activeUsersIncrease}
             icon={
               <PeopleAltIcon
                 sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
@@ -412,8 +462,21 @@ const Dashboard = () => {
           <StatBox
             title={newUsersCount}
             subtitle="Today's New Users"
-            progress="0.30"
-            increase="+36%"
+            progress={(() => {
+              if (!newUsersIncrease) return 0; // Default to 0 if no value
+          
+              const parsedIncrease = parseFloat(newUsersIncrease); // Convert string to number
+              if (isNaN(parsedIncrease)) return 0; // Fallback if parsing fails
+          
+              if (parsedIncrease < 0) {
+                // Invert negative value on a 100% scale
+                return Math.min(Math.max(1 - Math.abs(parsedIncrease) / 100, 0), 1);
+              }
+          
+              // Use as-is for positive values
+              return Math.min(Math.max(parsedIncrease / 100, 0), 1);
+            })()}
+            increase={newUsersIncrease}
             icon={
               <PersonAddIcon
                 sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
@@ -497,7 +560,7 @@ const Dashboard = () => {
 
         {/* Recent Transactions */}
         <Box
-          gridColumn="span 4"
+          gridColumn="span 8"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
           overflow="auto"
@@ -537,17 +600,17 @@ const Dashboard = () => {
               </Box>
               <Box color={colors.grey[100]}>{transaction.date}</Box>
               <Box
-                backgroundColor={colors.greenAccent[500]}
+                backgroundColor={colors.greenAccent[800]}
                 p="5px 10px"
                 borderRadius="4px"
               >
-                ${transaction.cost}
+                {transaction.cost} VND
               </Box>
             </Box>
           ))}
         </Box>
 
-        {/* ROW 3 */}
+        {/* ROW 3
         <Box
           gridColumn="span 4"
           gridRow="span 2"
@@ -606,7 +669,7 @@ const Dashboard = () => {
           <Box height="200px">
             <GeographyChart isDashboard={true} />
           </Box>
-        </Box>
+        </Box> */}
       </Box>
     </Box>
   );
